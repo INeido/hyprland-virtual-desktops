@@ -29,6 +29,12 @@ int luaParseStickyRule(lua_State* L) {
     return 0;
 }
 
+int luaParseWallpaperRule(lua_State* L) {
+    const std::string value = luaL_checkstring(L, 1);
+    parseWallpaperRule("vdeskwallpaper", value.c_str());
+    return 0;
+}
+
 void registerLuaBindings(HANDLE handle) {
     if (Config::mgr() && Config::mgr()->type() == Config::CONFIG_LUA) {
         HyprlandAPI::addLuaFunction(handle, "virtual_desktops", VDESK_DISPATCH_STR, luaDispatcherWrapper<virtualDeskDispatch>);
@@ -50,5 +56,6 @@ void registerLuaBindings(HANDLE handle) {
         HyprlandAPI::addLuaFunction(handle, "virtual_desktops", RESET_VDESK_DISPATCH_STR, luaDispatcherWrapper<resetVDeskDispatch>);
         
         HyprlandAPI::addLuaFunction(handle, "virtual_desktops", "stickyrule", luaParseStickyRule);
+        HyprlandAPI::addLuaFunction(handle, "virtual_desktops", WALLPAPER_RULE_KEYW, luaParseWallpaperRule);
     }
 }

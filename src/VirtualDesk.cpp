@@ -196,7 +196,6 @@ MonitorLayout VirtualDesk::generateCurrentMonitorLayout() {
         layout[monitors[j]] = i;
         j++;
     }
-    }
     return layout;
 }
 

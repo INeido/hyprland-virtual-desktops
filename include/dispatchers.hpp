@@ -21,3 +21,4 @@ SDispatchResult resetVDeskDispatch(std::string arg);
 
 // Config Keywords
 Hyprlang::CParseResult parseStickyRule(const char* command, const char* value);
+Hyprlang::CParseResult parseWallpaperRule(const char* command, const char* value);

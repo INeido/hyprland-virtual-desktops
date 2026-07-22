@@ -429,7 +429,7 @@ namespace {
         if (workspaceId == WORKSPACE_INVALID)
             return state;
 
-        const auto workspace = g_pCompositor->getWorkspaceByID(workspaceId);
+        const auto workspace = State::workspaceState()->query().id(workspaceId).run();
         if (!workspace || !workspace->m_renderOffset)
             return state;
 
