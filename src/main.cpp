@@ -14,7 +14,10 @@
 #include "VirtualDeskManager.hpp"
 #include "utils.hpp"
 #include "sticky_apps.hpp"
+#include "lua_bindings.hpp"
+#include "dispatchers.hpp"
 
+#include <plugins/PluginAPI.hpp>
 #include <src/desktop/DesktopTypes.hpp>
 #include <algorithm>
 #include <cctype>
@@ -426,7 +429,7 @@ namespace {
         if (workspaceId == WORKSPACE_INVALID)
             return state;
 
-        const auto workspace = g_pCompositor->getWorkspaceByID(workspaceId);
+        const auto workspace = State::workspaceState()->query().id(workspaceId).run();
         if (!workspace || !workspace->m_renderOffset)
             return state;
 
@@ -505,8 +508,7 @@ namespace {
         if (stage != RENDER_POST_WALLPAPER || !g_pHyprOpenGL)
             return;
 
-        static auto* const PWALLPAPERRENDER = (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, WALLPAPER_RENDER_CONF)->getDataStaticPtr();
-        if (!**PWALLPAPERRENDER)
+        if (!config.wallpaperRender->value())
             return;
 
         const PHLMONITOR monitor = g_pHyprRenderer->m_renderData.pMonitor.lock();
@@ -550,9 +552,10 @@ namespace {
 
         queueWallpaperForDesk(manager->activeVdesk()->id, monitor, {});
     }
-}
+    }
 
-void                                 parseNamesConf(std::string& conf) {
+void                                 parseNamesConf(const std::string& _conf) {
+    std::string conf = _conf;
     size_t      pos;
     size_t      delim;
     std::string rule;
@@ -733,10 +736,7 @@ SDispatchResult moveToNextDeskSilentDispatch(std::string arg) {
 }
 
 std::string printVDeskDispatch(eHyprCtlOutputFormat format, std::string arg) {
-    static auto* const PVDESKNAMESCONF = (Hyprlang::STRING const*)(HyprlandAPI::getConfigValue(PHANDLE, VIRTUALDESK_NAMES_CONF))->getDataStaticPtr();
-
-    auto               vdeskNamesConf = std::string{*PVDESKNAMESCONF};
-    parseNamesConf(vdeskNamesConf);
+    parseNamesConf(config.names->value());
 
     arg.erase(0, PRINTDESK_DISPATCH_STR.length());
 
@@ -788,9 +788,9 @@ std::string printStateDispatch(eHyprCtlOutputFormat format, std::string arg) {
             std::string  workspaces;
             bool         first = true;
             for (auto const& [monitor, workspaceId] : desk->activeLayout(manager->conf)) {
-                auto workspace = g_pCompositor->getWorkspaceByID(workspaceId);
+                auto workspace = State::workspaceState()->query().id(workspaceId).run();
                 if (workspace) {
-                    windows += workspace->getWindows();
+                    windows += workspace->getWindowCount();
                 }
                 if (!first)
                     workspaces += ", ";
@@ -819,9 +819,9 @@ std::string printStateDispatch(eHyprCtlOutputFormat format, std::string arg) {
             std::string  workspaces;
             bool         first = true;
             for (auto const& [monitor, workspaceId] : desk->activeLayout(manager->conf)) {
-                auto workspace = g_pCompositor->getWorkspaceByID(workspaceId);
+                auto workspace = State::workspaceState()->query().id(workspaceId).run();
                 if (workspace) {
-                    windows += workspace->getWindows();
+                    windows += workspace->getWindowCount();
                 }
                 if (!first)
                     workspaces += ", ";
@@ -976,14 +976,11 @@ void onMonitorAdded(PHLMONITOR monitor) {
 }
 
 void onConfigReloaded() {
-    static auto* const PNOTIFYINIT = (Hyprlang::INT* const*)HyprlandAPI::getConfigValue(PHANDLE, NOTIFY_INIT)->getDataStaticPtr();
-    if (**PNOTIFYINIT && !notifiedInit) {
+    if (config.notifyInit->value() && !notifiedInit) {
         HyprlandAPI::addNotification(PHANDLE, "Virtual desk Initialized successfully!", CHyprColor{0.f, 1.f, 1.f, 1.f}, 5000);
         notifiedInit = true;
     }
-    static auto* const PVDESKNAMESCONF = (Hyprlang::STRING const*)(HyprlandAPI::getConfigValue(PHANDLE, VIRTUALDESK_NAMES_CONF))->getDataStaticPtr();
-    auto               vdeskNamesConf  = std::string{*PVDESKNAMESCONF};
-    parseNamesConf(vdeskNamesConf);
+    parseNamesConf(config.names->value());
     finishWallpaperRuleReload();
     manager->loadLayoutConf();
 }
@@ -1054,13 +1051,14 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     HyprlandAPI::addDispatcherV2(PHANDLE, RESET_VDESK_DISPATCH_STR, resetVDeskDispatch);
 
-    // Configs
-    HyprlandAPI::addConfigValue(PHANDLE, VIRTUALDESK_NAMES_CONF, Hyprlang::STRING{"unset"});
-    HyprlandAPI::addConfigValue(PHANDLE, CYCLEWORKSPACES_CONF, Hyprlang::INT{1});
-    HyprlandAPI::addConfigValue(PHANDLE, REMEMBER_LAYOUT_CONF, Hyprlang::STRING{REMEMBER_SIZE.c_str()});
-    HyprlandAPI::addConfigValue(PHANDLE, NOTIFY_INIT, Hyprlang::INT{1});
-    HyprlandAPI::addConfigValue(PHANDLE, VERBOSE_LOGS, Hyprlang::INT{0});
-    HyprlandAPI::addConfigValue(PHANDLE, WALLPAPER_RENDER_CONF, Hyprlang::INT{0});
+    // Configs (register config value objects)
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.names);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.cycleWorkspaces);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.rememberLayout);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.notifyInit);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.verboseLogging);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.wallpaperRender);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.monitorOrder);
 
     // Keywords
     HyprlandAPI::addConfigKeyword(PHANDLE, STICKY_RULES_KEYW, parseStickyRule, Hyprlang::SHandlerOptions{});
@@ -1076,6 +1074,7 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     onRenderStageHook       = Event::bus()->m_events.render.stage.listen(onRenderStage);
 
     registerHyprctlCommands();
+    registerLuaBindings(PHANDLE);
 
     // Initialize first vdesk
     HyprlandAPI::reloadConfig();
