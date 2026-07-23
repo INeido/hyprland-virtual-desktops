@@ -76,7 +76,7 @@ std::vector<CSharedPointer<Monitor::CMonitor>> currentlyEnabledMonitors(const CS
         return mon->m_enabled;
     });
 
-    std::string order_str = config.monitorOrder->value();
+    std::string order_str = configStringOrAlt(config.monitorOrder, config.monitorOrderAlt);
     if (order_str != "unset" && !order_str.empty()) {
         std::vector<std::string> order;
         for (const auto subrange : std::views::split(order_str, ',')) {

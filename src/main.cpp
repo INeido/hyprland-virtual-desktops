@@ -508,7 +508,7 @@ namespace {
         if (stage != RENDER_POST_WALLPAPER || !g_pHyprOpenGL)
             return;
 
-        if (!config.wallpaperRender->value())
+if (!configValueOrAlt(config.wallpaperRender, config.wallpaperRenderAlt))
             return;
 
         const PHLMONITOR monitor = g_pHyprRenderer->m_renderData.pMonitor.lock();
@@ -736,7 +736,7 @@ SDispatchResult moveToNextDeskSilentDispatch(std::string arg) {
 }
 
 std::string printVDeskDispatch(eHyprCtlOutputFormat format, std::string arg) {
-    parseNamesConf(config.names->value());
+    parseNamesConf(configStringOrAlt(config.names, config.namesAlt));
 
     arg.erase(0, PRINTDESK_DISPATCH_STR.length());
 
@@ -976,11 +976,11 @@ void onMonitorAdded(PHLMONITOR monitor) {
 }
 
 void onConfigReloaded() {
-    if (config.notifyInit->value() && !notifiedInit) {
+    if (configValueOrAlt(config.notifyInit, config.notifyInitAlt) && !notifiedInit) {
         HyprlandAPI::addNotification(PHANDLE, "Virtual desk Initialized successfully!", CHyprColor{0.f, 1.f, 1.f, 1.f}, 5000);
         notifiedInit = true;
     }
-    parseNamesConf(config.names->value());
+    parseNamesConf(configStringOrAlt(config.names, config.namesAlt));
     finishWallpaperRuleReload();
     manager->loadLayoutConf();
 }
@@ -1053,12 +1053,19 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     // Configs (register config value objects)
     HyprlandAPI::addConfigValueV2(PHANDLE, config.names);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.namesAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.cycleWorkspaces);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.cycleWorkspacesAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.rememberLayout);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.rememberLayoutAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.notifyInit);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.notifyInitAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.verboseLogging);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.verboseLoggingAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.wallpaperRender);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.wallpaperRenderAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.monitorOrder);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.monitorOrderAlt);
 
     // Keywords
     HyprlandAPI::addConfigKeyword(PHANDLE, STICKY_RULES_KEYW, parseStickyRule, Hyprlang::SHandlerOptions{});

@@ -64,10 +64,25 @@ std::string                                    ltrim(const std::string& s);
 std::string                                    rtrim(const std::string& s);
 std::string                                    trim(const std::string& s);
 
+inline bool configValueOrAlt(const SP<Config::Values::CIntValue>& primary, const SP<Config::Values::CIntValue>& alternate) {
+    const auto altVal = alternate->value();
+    return altVal != alternate->defaultVal() ? static_cast<bool>(altVal) : static_cast<bool>(primary->value());
+}
+
+inline Config::INTEGER configIntOrAlt(const SP<Config::Values::CIntValue>& primary, const SP<Config::Values::CIntValue>& alternate) {
+    const auto altVal = alternate->value();
+    return altVal != alternate->defaultVal() ? altVal : primary->value();
+}
+
+inline Config::STRING configStringOrAlt(const SP<Config::Values::CStringValue>& primary, const SP<Config::Values::CStringValue>& alternate) {
+    const auto altVal = alternate->value();
+    return altVal != alternate->defaultVal() ? altVal : primary->value();
+}
+
 inline bool                           isVerbose() {
     if (!PHANDLE) {
         return true;
     }
-    return config.verboseLogging->value();
+    return configIntOrAlt(config.verboseLogging, config.verboseLoggingAlt);
 }
 #endif

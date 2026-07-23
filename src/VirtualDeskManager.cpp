@@ -197,12 +197,12 @@ void VirtualDeskManager::loadLayoutConf() {
     // Maybe in a future release :)
     if (confLoaded)
         return;
-    conf       = layoutConfFromString(config.rememberLayout->value());
+    conf       = layoutConfFromString(configStringOrAlt(config.rememberLayout, config.rememberLayoutAlt));
     confLoaded = true;
 }
 
 void VirtualDeskManager::cycleWorkspaces() {
-    if (!config.cycleWorkspaces->value())
+    if (!configIntOrAlt(config.cycleWorkspaces, config.cycleWorkspacesAlt))
         return;
 
     auto                              n_monitors     = State::monitorState()->monitors().size();
