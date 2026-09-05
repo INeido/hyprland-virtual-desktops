@@ -1056,6 +1056,8 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     HyprlandAPI::addConfigValueV2(PHANDLE, config.namesAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.cycleWorkspaces);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.cycleWorkspacesAlt);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.cyclePopulatedOnly);
+    HyprlandAPI::addConfigValueV2(PHANDLE, config.cyclePopulatedOnlyAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.rememberLayout);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.rememberLayoutAlt);
     HyprlandAPI::addConfigValueV2(PHANDLE, config.notifyInit);
